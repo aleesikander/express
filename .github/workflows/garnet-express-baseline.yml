@@ -43,3 +43,43 @@ jobs:
             --check-leaks \
             test/acceptance/hello-world.js \
             test/app.listen.js
+
+      - name: Controlled direct Node HTTPS request
+        shell: bash
+        run: |
+          node <<'NODE'
+          const https = require('node:https');
+
+          const request = https.get(
+            'https://example.com/?garnet-evaluation=express-direct',
+            {
+              headers: {
+                'User-Agent': 'garnet-express-evaluation/1.0'
+              }
+            },
+            (response) => {
+              response.resume();
+
+              response.on('end', () => {
+                console.log(`Controlled request completed with status ${response.statusCode}`);
+
+                if (
+                  response.statusCode === undefined ||
+                  response.statusCode < 200 ||
+                  response.statusCode >= 400
+                ) {
+                  process.exitCode = 1;
+                }
+              });
+            }
+          );
+
+          request.setTimeout(10000, () => {
+            request.destroy(new Error('Controlled request timed out'));
+          });
+
+          request.on('error', (error) => {
+            console.error(`Controlled request failed: ${error.message}`);
+            process.exitCode = 1;
+          });
+          NODE
