@@ -44,10 +44,33 @@ jobs:
             test/acceptance/hello-world.js \
             test/app.listen.js
 
-      - name: Controlled long-lived Node HTTPS request
+      - name: Controlled indirect npm Node HTTPS request
         shell: bash
         run: |
-          node <<'NODE'
+          set -euo pipefail
+
+          HARNESS_DIR="${RUNNER_TEMP}/garnet-express-indirect"
+          rm -rf "${HARNESS_DIR}"
+          mkdir -p "${HARNESS_DIR}"
+
+          cleanup() {
+            rm -rf "${HARNESS_DIR}"
+          }
+
+          trap cleanup EXIT
+
+          cat > "${HARNESS_DIR}/package.json" <<'JSON'
+          {
+            "name": "garnet-express-indirect-evaluation",
+            "version": "1.0.0",
+            "private": true,
+            "scripts": {
+              "controlled:indirect": "node indirect-egress.js"
+            }
+          }
+          JSON
+
+          cat > "${HARNESS_DIR}/indirect-egress.js" <<'NODE'
           const https = require('node:https');
 
           const agent = new https.Agent({
@@ -113,7 +136,7 @@ jobs:
                 }
 
                 console.log(
-                  'Holding the HTTPS keep-alive agent for 15 seconds for capture diagnostics'
+                  'Holding the HTTPS keep-alive agent for 15 seconds for ancestry diagnostics'
                 );
 
                 holdTimer = setTimeout(() => {
@@ -123,7 +146,7 @@ jobs:
                     );
                   }
 
-                  console.log('Diagnostic hold completed');
+                  console.log('Ancestry diagnostic hold completed');
                   finish(0);
                 }, 15000);
               });
@@ -150,3 +173,5 @@ jobs:
             finish(1);
           });
           NODE
+
+          npm --prefix "${HARNESS_DIR}" run controlled:indirect
