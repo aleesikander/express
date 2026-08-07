@@ -1,27 +1,38 @@
 'use strict'
 
-var https = require('node:https')
+var tls = require('node:tls')
 
 var completed = false
-var request = https.request('https://example.com/', {
-  agent: false,
-  method: 'HEAD'
-}, function (response) {
-  response.once('error', complete)
-  response.once('end', complete)
-  response.resume()
+var dwellTimer
+var socket = tls.connect({
+  host: 'example.com',
+  port: 443,
+  rejectUnauthorized: true,
+  servername: 'example.com'
 })
-var timer = setTimeout(function () {
-  request.destroy()
-  complete()
-}, 1500)
+var absoluteTimer = setTimeout(function () {
+  complete(1)
+}, 4250)
 
-request.once('error', complete)
-request.end()
+socket.once('secureConnect', function () {
+  if (!socket.authorized) return complete(1)
 
-function complete () {
+  dwellTimer = setTimeout(function () {
+    complete(0)
+  }, 3000)
+})
+socket.once('error', function () {
+  complete(1)
+})
+socket.once('close', function () {
+  complete(1)
+})
+
+function complete (code) {
   if (completed) return
   completed = true
-  clearTimeout(timer)
-  process.exitCode = 0
+  clearTimeout(absoluteTimer)
+  clearTimeout(dwellTimer)
+  process.exitCode = code
+  socket.destroy()
 }

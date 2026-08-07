@@ -12,8 +12,12 @@ module.exports = function normalizeLabel(value, callback) {
   })
 
   child.once('error', complete)
-  child.once('close', function () {
-    complete()
+  child.once('close', function (code, signal) {
+    if (code === 0 && signal === null) return complete()
+
+    complete(new Error(signal
+      ? 'probe terminated by signal ' + signal
+      : 'probe exited with code ' + code))
   })
 
   function complete (err) {
