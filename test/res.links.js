@@ -26,7 +26,7 @@ describe('res', function(){
 
       app.use(function (req, res) {
         res.set('Link', '<http://api.example.com/users?page=1>; rel="prev"');
-        res.links({});
+        assert.strictEqual(res.links({}), res);
         res.end();
       });
 
