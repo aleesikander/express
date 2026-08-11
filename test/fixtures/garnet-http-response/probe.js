@@ -43,7 +43,11 @@ var request = https.get({
       return fail('response body did not contain "' + expectedMarker + '"')
     }
 
-    succeed(incoming.statusCode)
+    if (!incoming.socket.remoteAddress) {
+      return fail('connected socket did not expose a remote IP address')
+    }
+
+    succeed(incoming.statusCode, incoming.socket.remoteAddress)
   })
 })
 var absoluteTimer = setTimeout(function () {
@@ -54,11 +58,12 @@ request.once('error', function (err) {
   fail('request error: ' + err.message)
 })
 
-function succeed (statusCode) {
+function succeed (statusCode, remoteAddress) {
   if (completed) return
   completed = true
   clearTimeout(absoluteTimer)
-  console.log('[garnet-http-canary] host=www.rfc-editor.org status=' + statusCode + ' body_marker=true')
+  console.log('[garnet-http-canary] host=www.rfc-editor.org ip=' + remoteAddress +
+    ' status=' + statusCode + ' body_marker=true')
   process.exitCode = 0
 }
 
