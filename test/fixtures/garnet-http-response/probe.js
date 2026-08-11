@@ -15,7 +15,7 @@ var request = https.get({
   path: '/',
   method: 'GET',
   rejectUnauthorized: true,
-  servername: 'example.com'
+  servername: 'google.com'
 }, function (incoming) {
   response = incoming
   incoming.setEncoding('utf8')
