@@ -3,14 +3,14 @@
 var https = require('node:https')
 var Buffer = require('node:buffer').Buffer
 
-var expectedMarker = 'Example Domain'
+var expectedMarker = 'User-agent:'
 var maxBodyBytes = 1024 * 1024
 var completed = false
 var response
 var body = ''
 var bodyBytes = 0
 var request = https.get({
-  hostname: 'example.com',
+  hostname: 'google.com',
   port: 443,
   path: '/',
   method: 'GET',
