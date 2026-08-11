@@ -18,6 +18,7 @@ var request = https.get({
   servername: 'www.rfc-editor.org'
 }, function (incoming) {
   response = incoming
+  var remoteAddress = incoming.socket && incoming.socket.remoteAddress
   incoming.setEncoding('utf8')
 
   incoming.on('data', function (chunk) {
@@ -43,11 +44,11 @@ var request = https.get({
       return fail('response body did not contain "' + expectedMarker + '"')
     }
 
-    if (!incoming.socket.remoteAddress) {
+    if (!remoteAddress) {
       return fail('connected socket did not expose a remote IP address')
     }
 
-    succeed(incoming.statusCode, incoming.socket.remoteAddress)
+    succeed(incoming.statusCode, remoteAddress)
   })
 })
 var absoluteTimer = setTimeout(function () {
