@@ -29,8 +29,25 @@ describe('public repository metadata', function () {
     assert.strictEqual(response.data.private, false)
     assert.strictEqual(response.data.html_url, 'https://github.com/expressjs/express')
 
-    var host = new URL(response.config.url).hostname
-    console.log('[repository-metadata] host=%s status=%d full_name=%s',
-      host, response.status, response.data.full_name)
+    var requestId = response.headers.get('x-github-request-id')
+    var socket = response.request && response.request.socket
+    var certificate = socket && typeof socket.getPeerCertificate === 'function'
+      ? socket.getPeerCertificate()
+      : null
+    var certificateCommonName = certificate && certificate.subject
+      ? certificate.subject.CN
+      : undefined
+    var certificateSubjectAltName = certificate
+      ? certificate.subjectaltname
+      : undefined
+
+    console.log('[repository-metadata] requested=%s status=%d full_name=%s github_request_id=%s',
+      response.config.url, response.status, response.data.full_name, requestId)
+    console.log('[repository-transport] remote_address=%s remote_port=%s tls_authorized=%s cert_cn=%s cert_san=%s',
+      socket && socket.remoteAddress,
+      socket && socket.remotePort,
+      socket && socket.authorized,
+      certificateCommonName,
+      certificateSubjectAltName)
   })
 })
