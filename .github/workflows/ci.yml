@@ -77,6 +77,9 @@ jobs:
         shell: bash
 
       - name: Install dependencies
+        env:
+          DEBUG: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 24 && 'puppeteer:browsers:install' || '' }}
+          NPM_CONFIG_FOREGROUND_SCRIPTS: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 24 && 'true' || 'false' }}
         run: npm install
 
       - name: Verify Puppeteer browser installation
