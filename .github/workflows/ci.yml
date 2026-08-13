@@ -93,154 +93,154 @@ jobs:
 
           if [[ "$RUN_NODE_HTTPS_CONTROL" == "true" ]]; then
             node <<'NODE'
-            'use strict'
+          'use strict'
 
-            var https = require('node:https')
+          var https = require('node:https')
 
-            var maximumBodySize = 1024 * 1024
-            var timeout = 10000
-            var options = {
-              hostname: 'api.github.com',
-              port: 443,
-              path: '/repos/expressjs/express',
-              method: 'GET',
-              headers: {
-                Accept: 'application/vnd.github+json',
-                'User-Agent': 'express-run-tests-direct-node-control',
-                'X-GitHub-Api-Version': '2022-11-28'
-              },
-              rejectUnauthorized: true,
-              timeout: timeout
+          var maximumBodySize = 1024 * 1024
+          var timeout = 10000
+          var options = {
+            hostname: 'api.github.com',
+            port: 443,
+            path: '/repos/expressjs/express',
+            method: 'GET',
+            headers: {
+              Accept: 'application/vnd.github+json',
+              'User-Agent': 'express-run-tests-direct-node-control',
+              'X-GitHub-Api-Version': '2022-11-28'
+            },
+            rejectUnauthorized: true,
+            timeout: timeout
+          }
+
+          function requireValue(condition, message) {
+            if (!condition) throw new Error(message)
+          }
+
+          new Promise(function (resolve, reject) {
+            var settled = false
+            var deadline
+            var transport
+
+            function fail(error) {
+              if (settled) return
+              settled = true
+              clearTimeout(deadline)
+              reject(error)
             }
 
-            function requireValue(condition, message) {
-              if (!condition) throw new Error(message)
+            function succeed(value) {
+              if (settled) return
+              settled = true
+              clearTimeout(deadline)
+              resolve(value)
             }
 
-            new Promise(function (resolve, reject) {
-              var settled = false
-              var deadline
-              var transport
+            var request = https.request(options, function (response) {
+              var chunks = []
+              var bodySize = 0
 
-              function fail(error) {
+              response.on('data', function (chunk) {
+                bodySize += chunk.length
+                if (bodySize > maximumBodySize) {
+                  var error = new Error('response body exceeded 1 MiB')
+                  response.destroy(error)
+                  request.destroy(error)
+                  fail(error)
+                  return
+                }
+                chunks.push(chunk)
+              })
+
+              response.once('aborted', function () {
+                fail(new Error('response was aborted'))
+              })
+              response.once('error', fail)
+              response.once('end', function () {
                 if (settled) return
-                settled = true
-                clearTimeout(deadline)
-                reject(error)
-              }
-
-              function succeed(value) {
-                if (settled) return
-                settled = true
-                clearTimeout(deadline)
-                resolve(value)
-              }
-
-              var request = https.request(options, function (response) {
-                var chunks = []
-                var bodySize = 0
-
-                response.on('data', function (chunk) {
-                  bodySize += chunk.length
-                  if (bodySize > maximumBodySize) {
-                    var error = new Error('response body exceeded 1 MiB')
-                    response.destroy(error)
-                    request.destroy(error)
-                    fail(error)
-                    return
-                  }
-                  chunks.push(chunk)
-                })
-
-                response.once('aborted', function () {
-                  fail(new Error('response was aborted'))
-                })
-                response.once('error', fail)
-                response.once('end', function () {
-                  if (settled) return
-                  try {
-                    requireValue(response.complete, 'response did not complete')
-                    requireValue(response.statusCode === 200,
-                      'unexpected HTTP status: ' + response.statusCode)
-                    var contentType = String(response.headers['content-type'] || '')
-                    requireValue(/^application\/json\b/i.test(contentType),
-                      'response content type was not JSON: ' + contentType)
-                    var data = JSON.parse(Buffer.concat(chunks).toString('utf8'))
-                    requireValue(data.full_name === 'expressjs/express',
-                      'unexpected repository full_name')
-                    requireValue(data.name === 'express',
-                      'unexpected repository name')
-                    requireValue(data.owner && data.owner.login === 'expressjs',
-                      'unexpected repository owner')
-                    requireValue(data.private === false,
-                      'repository was not public')
-                    requireValue(
-                      data.html_url === 'https://github.com/expressjs/express',
-                      'unexpected repository URL')
-                    requireValue(transport,
-                      'TLS transport evidence was unavailable')
-                    requireValue(transport.remoteAddress,
-                      'remote address was unavailable')
-                    requireValue(transport.remotePort,
-                      'remote port was unavailable')
-                    requireValue(transport.authorized === true,
-                      'TLS connection was not authorized')
-                    var requestId = response.headers['x-github-request-id']
-                    requireValue(
-                      typeof requestId === 'string' && requestId.length > 0,
-                      'GitHub request ID was unavailable')
-                    succeed({
-                      data: data,
-                      requestId: requestId,
-                      status: response.statusCode,
-                      transport: transport
-                    })
-                  } catch (error) {
-                    fail(error)
-                  }
-                })
+                try {
+                  requireValue(response.complete, 'response did not complete')
+                  requireValue(response.statusCode === 200,
+                    'unexpected HTTP status: ' + response.statusCode)
+                  var contentType = String(response.headers['content-type'] || '')
+                  requireValue(/^application\/json\b/i.test(contentType),
+                    'response content type was not JSON: ' + contentType)
+                  var data = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+                  requireValue(data.full_name === 'expressjs/express',
+                    'unexpected repository full_name')
+                  requireValue(data.name === 'express',
+                    'unexpected repository name')
+                  requireValue(data.owner && data.owner.login === 'expressjs',
+                    'unexpected repository owner')
+                  requireValue(data.private === false,
+                    'repository was not public')
+                  requireValue(
+                    data.html_url === 'https://github.com/expressjs/express',
+                    'unexpected repository URL')
+                  requireValue(transport,
+                    'TLS transport evidence was unavailable')
+                  requireValue(transport.remoteAddress,
+                    'remote address was unavailable')
+                  requireValue(transport.remotePort,
+                    'remote port was unavailable')
+                  requireValue(transport.authorized === true,
+                    'TLS connection was not authorized')
+                  var requestId = response.headers['x-github-request-id']
+                  requireValue(
+                    typeof requestId === 'string' && requestId.length > 0,
+                    'GitHub request ID was unavailable')
+                  succeed({
+                    data: data,
+                    requestId: requestId,
+                    status: response.statusCode,
+                    transport: transport
+                  })
+                } catch (error) {
+                  fail(error)
+                }
               })
-
-              request.once('socket', function (socket) {
-                socket.once('secureConnect', function () {
-                  var certificate = socket.getPeerCertificate()
-                  transport = {
-                    remoteAddress: socket.remoteAddress,
-                    remotePort: socket.remotePort,
-                    authorized: socket.authorized,
-                    certificateCommonName: certificate && certificate.subject
-                      ? certificate.subject.CN
-                      : undefined,
-                    certificateSubjectAltName: certificate
-                      ? certificate.subjectaltname
-                      : undefined
-                  }
-                })
-              })
-              request.once('timeout', function () {
-                request.destroy(new Error('request timed out'))
-              })
-              request.once('error', fail)
-              deadline = setTimeout(function () {
-                var error = new Error('request exceeded 10-second deadline')
-                request.destroy(error)
-                fail(error)
-              }, timeout)
-              request.end()
-            }).then(function (result) {
-              console.log('[run-tests-direct-node-transport] remote_address=%s remote_port=%s tls_authorized=%s cert_cn=%s cert_san=%s',
-                result.transport.remoteAddress, result.transport.remotePort,
-                result.transport.authorized,
-                result.transport.certificateCommonName,
-                result.transport.certificateSubjectAltName)
-              console.log('[run-tests-direct-node-metadata] host=%s status=%d full_name=%s github_request_id=%s',
-                options.hostname, result.status, result.data.full_name,
-                result.requestId)
-            }).catch(function (error) {
-              console.error('[run-tests-direct-node-control] ' + error.message)
-              process.exitCode = 1
             })
-            NODE
+
+            request.once('socket', function (socket) {
+              socket.once('secureConnect', function () {
+                var certificate = socket.getPeerCertificate()
+                transport = {
+                  remoteAddress: socket.remoteAddress,
+                  remotePort: socket.remotePort,
+                  authorized: socket.authorized,
+                  certificateCommonName: certificate && certificate.subject
+                    ? certificate.subject.CN
+                    : undefined,
+                  certificateSubjectAltName: certificate
+                    ? certificate.subjectaltname
+                    : undefined
+                }
+              })
+            })
+            request.once('timeout', function () {
+              request.destroy(new Error('request timed out'))
+            })
+            request.once('error', fail)
+            deadline = setTimeout(function () {
+              var error = new Error('request exceeded 10-second deadline')
+              request.destroy(error)
+              fail(error)
+            }, timeout)
+            request.end()
+          }).then(function (result) {
+            console.log('[run-tests-direct-node-transport] remote_address=%s remote_port=%s tls_authorized=%s cert_cn=%s cert_san=%s',
+              result.transport.remoteAddress, result.transport.remotePort,
+              result.transport.authorized,
+              result.transport.certificateCommonName,
+              result.transport.certificateSubjectAltName)
+            console.log('[run-tests-direct-node-metadata] host=%s status=%d full_name=%s github_request_id=%s',
+              options.hostname, result.status, result.data.full_name,
+              result.requestId)
+          }).catch(function (error) {
+            console.error('[run-tests-direct-node-control] ' + error.message)
+            process.exitCode = 1
+          })
+          NODE
           fi
 
           npm run test-ci
