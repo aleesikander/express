@@ -84,6 +84,19 @@ jobs:
           echo "Node.js version: $(node -v)"
           echo "NPM version: $(npm -v)"
 
+      - name: Verify GitHub API TLS egress
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 24
+        shell: bash
+        run: |
+          set -o pipefail
+          openssl s_client \
+            -connect api.github.com:443 \
+            -servername api.github.com \
+            -verify_hostname api.github.com \
+            -verify_return_error \
+            -brief \
+            </dev/null 2>&1 | tee "$RUNNER_TEMP/api-github-openssl.txt"
+
       - name: Run tests
         shell: bash
         run: npm run test-ci
