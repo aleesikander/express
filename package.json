@@ -62,6 +62,7 @@
     "vary": "^1.1.2"
   },
   "devDependencies": {
+    "@aws-sdk/client-sts": "3.967.0",
     "after": "0.8.2",
     "connect-redis": "^8.0.1",
     "cookie-parser": "1.4.7",
