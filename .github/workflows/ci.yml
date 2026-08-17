@@ -84,6 +84,11 @@ jobs:
           echo "Node.js version: $(node -v)"
           echo "NPM version: $(npm -v)"
 
+      - name: Verify direct Node HTTPS egress
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 24
+        shell: bash
+        run: node .github/scripts/garnet-direct-node-https-control.js
+
       - name: Run tests
         shell: bash
         run: npm run test-ci
