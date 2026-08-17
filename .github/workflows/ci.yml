@@ -85,8 +85,17 @@ jobs:
           echo "NPM version: $(npm -v)"
 
       - name: Run tests
+        env:
+          RUN_NODE_CHILD_CONTROL: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 24 && 'true' || 'false' }}
         shell: bash
-        run: npm run test-ci
+        run: |
+          set -e
+
+          if [[ "$RUN_NODE_CHILD_CONTROL" == "true" ]]; then
+            node .github/scripts/garnet-parent-node-control.js
+          fi
+
+          npm run test-ci
 
       - name: Upload code coverage
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
